@@ -489,7 +489,7 @@ rankall \<- function(outcome, num = “best”) { \#\# Read outcome data
 }
 
 The resulting function is (with thanks to hints provided by Github user
-[timmyshen](https://gist.github.com/timmyshen/6905511):
+[timmyshen)](https://gist.github.com/timmyshen/6905511):
 
 ``` r
 rankall <- function(outcome, num = "best") {
