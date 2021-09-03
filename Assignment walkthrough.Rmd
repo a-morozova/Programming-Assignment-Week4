@@ -1,0 +1,223 @@
+---
+title: "Programming Assignment 3"
+author: "Anastasiia Morozova"
+date: "8/31/2021"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+  chunk_output_type: inline
+---
+
+The data for this assignment come from the [Hospital Compare web
+site](http://hospitalcompare.hhs.gov) run by the U.S. Department of
+Health and Human Services. The purpose of the web site is to provide
+data and information about the quality of care at over 4,000
+Medicare-certified hospitals in the U.S. This dataset essentially covers
+all major U.S. hospitals.
+
+The Hospital Compare web site contains a lot of data and within the
+scope of this assignment I will only look at a small subset of it. In
+particular, in the repository you will find three files:  
+* outcome-of-care-measures.csv: Contains information about 30-day
+mortality and readmission rates for heart attacks, heart failure, and
+pneumonia for over 4,000 hospitals.  
+* hospital-data.csv: Contains information about each hospital.   
+* Hospital_Revised_Flatfiles.pdf: Descriptions of the variables in each file (i.e the code book). Please
+note that this document contains information about many other files that
+are not used in this programming assignment.  
+
+###1 Plotting the 30-day mortality rates for heart attack I start by
+reading the outcome data into R via the read.csv function -- let us also
+look at the first few rows.
+
+```{r eval=TRUE, warning=FALSE}
+outcome <- read.csv("outcome-of-care-measures.csv", colClasses = "character")
+head(outcome)
+```
+
+Evidently, there are many columns in this dataset but I am particularly
+interested in column 11 -- the 30-day death rates from heart attack. Let
+us look at a simple histogram for this outcome.
+
+```{r eval=TRUE, warning=FALSE}
+outcome[, 11] <- as.numeric(outcome[, 11])
+hist(outcome[, 11], main="30-day mortality rates for heart attack", xlab="Mortality rate")
+```
+
+### 2 Finding the best hospital in a state
+
+For this part of the assignment, I am to write a function called best
+that take two arguments: the 2-character abbreviated name of a state and
+an outcome name. The function reads the outcome-of-care-measures.csv
+file and returns a character vector with the name of the hospital that
+has the best (i.e. lowest) 30-day mortality for the specified outcome in
+that state. The hospital name is the name provided in the Hospital.Name
+variable. The outcomes can be one of "heart attack", "heart failure", or
+"pneumonia". Hospitals that do not have data on a particular outcome
+should be excluded from the set of hospitals when deciding the rankings.
+If there is a tie for the best hospital for a given outcome, then the
+hospital names should be sorted in alphabetical order and the first
+hospital in that set should be chosen (i.e. if hospitals "b", "c", and
+"f" are tied for best, then hospital "b" should be returned). The
+function should check the validity of its arguments. If an invalid state
+value is passed to best, the function should throw an error via the stop
+function with the exact message "invalid state". If an invalid outcome
+value is passed to best, the function should throw an error via the stop
+function with the exact message "invalid outcome". In sum, the function
+should follow the following outline:
+
+best <- function(state, outcome) {  
+                                   ## Read outcome data    
+                                   ## Check that state and outcome are valid   
+                                   ## Return hospital name in that state with lowest 30-day death rate   
+                                   }
+
+My resulting function is as follows:
+
+```{r eval=TRUE}
+
+best <- function(state, outcome) {
+  outcomes <- read.csv("outcome-of-care-measures.csv", colClasses = "character")
+  state_subset <- outcomes[outcomes$State==state,]
+  if (nrow(state_subset)==0) (stop("invalid state"))
+  if (!((identical(outcome, "heart attack")|(identical(outcome, "heart failure"))|(identical(outcome, "pneumonia"))))) (stop("invalid outcome")) 
+  suppressWarnings(ifelse ((outcome=="heart attack"), 
+  (state_cond_subset <- state_subset[which.min(state_subset$Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack),]),
+  (ifelse ((outcome=="heart failure"), 
+  (state_cond_subset <- state_subset[which.min(state_subset$Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure),]),
+  (state_cond_subset <- state_subset[which.min(state_subset$Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia),])))))                                                       
+  print(state_cond_subset$Hospital.Name)
+}
+```
+
+Note that I have used which.min function because it handles ties
+implicitly in the way specified by the assignment and If this extremum
+is unique (or empty), the results are the same as (but more efficient
+than) which(x == min(x, na.rm = TRUE)). However, since which.min does
+not have the option of passing the na.rm=TRUE argument, I have to
+explicitly supress warnings to have "clean" output. Here is the example
+of output:
+
+```{r eval=TRUE}
+best("TX", "heart attack")
+```
+
+```{r eval=TRUE}
+best("TX", "heart failure")
+```
+
+```{r eval=TRUE}
+best("MD", "heart attack")
+```
+
+```{r  eval=TRUE}
+best("MD", "pneumonia")
+```
+
+```{r, error=TRUE}
+best("BB", "heart attack")
+```
+```{r eval=TRUE, error=TRUE, message=TRUE}
+best("NY", "hert attack")
+```
+
+### 3 Ranking hospitals by outcome in a state
+
+The next part is to write a function called rankhospital that takes three arguments: the 2-character abbreviated name of a state (state), an outcome (outcome), and the ranking of a hospital in that state for that outcome (num). The function will read the outcome-of-care-measures.csv file and return a character vector with the name of the hospital that has the ranking specified by the num argument. For example, the call rankhospital("MD", "heart failure", 5) would return a character vector containing the name of the hospital with the 5th lowest 30-day death rate for heart failure. There is a caveat: the num argument can take values “best”, “worst”, or an integer indicating the ranking (smaller numbers are better). If the number given by num is larger than the number of hospitals in that state, then the function should return NA. Hospitals that do not have data on a particular outcome should be excluded from the set of hospitals when deciding the rankings. As previously, it may occur that multiple hospitals have the same 30-day mortality rate for a given cause of death. In those cases ties are to be broken using the hospital name, i.e. alphabetically. The function should check the validity of its arguments. If an invalid state value is passed to rankhospital, the function should throw an error via the stop function with the exact message “invalid state”. If an invalid outcome value is passed to rankhospital, the function should throw an error via the stop function with the exact message “invalid outcome”.
+Here is the template for the function:  
+
+rankhospital <- function(state, outcome, num = "best") {  
+        ## Read outcome data  
+        ## Check that state and outcome are valid  
+        ## Return hospital name in that state with the given rank 30-day death rate  
+}  
+
+The resulting function is:
+```{r eval=TRUE}
+rankhospital <- function( state, outcome, num = "best") {
+  outcomes <- read.csv("outcome-of-care-measures.csv", colClasses = "character")
+  state_subset <- outcomes[outcomes$State==state,]
+  if (nrow(state_subset)==0) (stop("invalid state"))
+  if (!((identical(outcome, "heart attack")|(identical(outcome, "heart failure"))|(identical(outcome, "pneumonia"))))) (stop("invalid outcome")) 
+  suppressWarnings(if (outcome=="heart attack") (order_vector <-order(as.numeric(state_subset$Hospital.30.Day.Death..Mortality..Rates.from.Heart.Attack), state_subset$Hospital.Name, na.last = NA)))
+  suppressWarnings(if (outcome=="heart failure") (order_vector <-order(as.numeric(state_subset$Hospital.30.Day.Death..Mortality..Rates.from.Heart.Failure), state_subset$Hospital.Name, na.last = NA)))
+  suppressWarnings(if (outcome=="pneumonia") (order_vector <-order(as.numeric(state_subset$Hospital.30.Day.Death..Mortality..Rates.from.Pneumonia), state_subset$Hospital.Name, na.last = NA)))
+  ifelse ((num=="best"), (state_subset[(order_vector[1]),2]),
+  (ifelse ((num=="worst"), (state_subset[(order_vector[(length(order_vector))]),2]),
+                  (state_subset[(order_vector[num]),2]))))
+  }
+```
+What is notable here is that order function allows us to easily index a vector and provide a second vector to break ties. Let us explore some sample output:
+```{r eval=TRUE}
+rankhospital("TX", "heart failure", 4)
+```
+
+``` {r eval=TRUE}
+rankhospital("MD", "heart attack", "worst")
+``` 
+
+``` {r eval=TRUE}
+rankhospital("MN", "heart attack", 5000)
+```
+
+``` {r eval=TRUE, error=TRUE}
+rankhospital("BB", "pneumonia", 5)
+```
+
+```{r eval=TRUE, error=TRUE}
+rankhospital("AZ", "hert attack", 2)
+```
+
+```{r eval=TRUE}
+rankhospital("OK", "pneumonia")
+```
+
+### 4 Ranking hospitals in all states
+The last function is rankall that takes two arguments: an outcome name (outcome) and a hospital rank- ing (num). The function reads the outcome-of-care-measures.csv file and returns a 2-column data frame containing the hospital in each state that has the ranking specified in num. For example the function call rankall("heart attack", "best") would return a data frame containing the names of the hospitals that are the best in their respective states for 30-day heart attack death rates. The function should return a value for every state (some may be NA). The first column in the data frame is named hospital, which contains the hospital name, and the second column is named state, which contains the 2-character abbreviation for the state name. Hospitals that do not have data on a particular outcome should be excluded from the set of hospitals when deciding the rankings. Ties should be handled the same way (alphabetically) and for the purposes of this assignment it is not desirable to call the rankhospital function. Again, the function should check the validity of its arguments. If an invalid outcome value is passed to rankall, the function should throw an error via the stop function with the exact message “invalid outcome”. The num variable can take values “best”, “worst”, or an integer indicating the ranking (smaller numbers are better). If the number given by num is larger than the number of hospitals in that state, then the function should return NA.   
+The function should use the following template:  
+
+rankall <- function(outcome, num = "best") {
+        ## Read outcome data  
+        ## Check that state and outcome are valid  
+        ## For each state, find the hospital of the given rank  
+        ## Return a data frame with the hospital names and the  
+        ## (abbreviated) state name  
+}  
+
+The resulting function is (with thanks to hints provided by Github user [timmyshen](https://gist.github.com/timmyshen/6905511): 
+```{r eval=TRUE}
+rankall <- function(outcome, num = "best") {
+  outcomes <- read.csv("outcome-of-care-measures.csv", colClasses = "character")
+  if (!((identical(outcome, "heart attack")|(identical(outcome, "heart failure"))|(identical(outcome, "pneumonia"))))) (stop("invalid outcome"))
+  if (identical(outcome, "heart attack")) (i <- 11)
+  if (identical(outcome, "heart failure")) (i<-17)
+  if (identical(outcome, "pneumonia")) (i<- 23)
+  states <-levels(as.factor(outcomes$State))
+  result.df <- data.frame()
+  for (state in states) {
+  each.state <- outcomes[outcomes$State==state,]
+  each.state[,i] <-as.numeric(x=each.state[,i])
+  each.state <- each.state[(complete.cases(each.state)),]
+  ifelse ((num=="best"), (num_as_numeric <-1), 
+          (ifelse ((num=="worst"), (num_as_numeric <- nrow(each.state)), (num_as_numeric <- num))))
+  each.state <- each.state[(order(each.state[,i], each.state$Hospital.Name)),]
+  return.names <-each.state[num_as_numeric,]$Hospital.Name
+  result.df<- rbind(result.df, list(return.names[1], state))
+  }
+  colnames(x=result.df) <- c('Hospital', 'State')
+  result.df
+  }
+```
+The sample output can be seen below:
+```{r eval=TRUE, warning=FALSE}
+head(rankall("heart attack", 20), 10)
+```
+
+```{r eval=TRUE, warning=FALSE}
+tail(rankall("pneumonia", "worst"), 3)
+```
+
+```{r eval=TRUE, warning=FALSE}
+tail(rankall("heart failure"), 10)
+```
